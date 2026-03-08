@@ -195,6 +195,13 @@ public sealed class GeneratedNullablePayload
     public DateTimeOffset? When { get; set; }
 }
 
+public sealed class GeneratedNullableReferenceTypePayload
+{
+    public string? NullableMock { get; init; }
+
+    public string NonNullableMock { get; init; } = string.Empty;
+}
+
 public enum GeneratedEnumKind
 {
     A = 0,
@@ -277,6 +284,12 @@ internal partial class TestTomlSerializerContextCollections : TomlSerializerCont
 [TomlSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [TomlSerializable(typeof(GeneratedNullablePayload))]
 internal partial class TestTomlSerializerContextNullables : TomlSerializerContext
+{
+}
+
+[TomlSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[TomlSerializable(typeof(GeneratedNullableReferenceTypePayload))]
+internal partial class TestTomlSerializerContextNullableReferenceTypes : TomlSerializerContext
 {
 }
 
@@ -1018,5 +1031,36 @@ public class NewApiSourceGenerationTests
         var circle = (GeneratedIntDiscrimCircle)result!;
         Assert.That(circle.Color, Is.EqualTo("red"));
         Assert.That(circle.Radius, Is.EqualTo(5.0));
+    }
+
+    [Test]
+    public void GeneratedContext_NullableReferenceType_WhenAbsent_ShouldRemainNull()
+    {
+        var context = TestTomlSerializerContextNullableReferenceTypes.Default;
+        var toml = """
+            nonNullableMock = "hello"
+            """;
+
+        var payload = TomlSerializer.Deserialize(toml, context.GeneratedNullableReferenceTypePayload);
+
+        Assert.That(payload, Is.Not.Null);
+        Assert.That(payload!.NullableMock, Is.Null);
+        Assert.That(payload.NonNullableMock, Is.EqualTo("hello"));
+    }
+
+    [Test]
+    public void GeneratedContext_NullableReferenceType_WhenPresent_ShouldBind()
+    {
+        var context = TestTomlSerializerContextNullableReferenceTypes.Default;
+        var toml = """
+            nullableMock = "world"
+            nonNullableMock = "hello"
+            """;
+
+        var payload = TomlSerializer.Deserialize(toml, context.GeneratedNullableReferenceTypePayload);
+
+        Assert.That(payload, Is.Not.Null);
+        Assert.That(payload!.NullableMock, Is.EqualTo("world"));
+        Assert.That(payload.NonNullableMock, Is.EqualTo("hello"));
     }
 }

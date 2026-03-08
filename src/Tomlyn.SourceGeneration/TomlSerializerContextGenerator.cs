@@ -896,8 +896,10 @@ public sealed class TomlSerializerContextGenerator : IIncrementalGenerator
         for (var i = 0; i < ctor.Parameters.Length; i++)
         {
             var parameter = ctor.Parameters[i];
-            var parameterTypeName = parameter.ParameterType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            var defaultLiteral = parameter.ParameterType.IsReferenceType ? "default!" : "default";
+            // Use nullable type declaration for nullable reference types to avoid CS8600 warnings on template assignments.
+            var isNullableRefType = parameter.ParameterType.IsReferenceType && parameter.ParameterType.NullableAnnotation == NullableAnnotation.Annotated;
+            var parameterTypeName = parameter.ParameterType.ToDisplayString(isNullableRefType ? FullyQualifiedNullableFormat : SymbolDisplayFormat.FullyQualifiedFormat);
+            var defaultLiteral = isNullableRefType ? "null" : (parameter.ParameterType.IsReferenceType ? "default!" : "default");
             builder.Append("            ").Append(parameterTypeName).Append(" __arg").Append(i.ToString(CultureInfo.InvariantCulture)).Append(" = ").Append(defaultLiteral).AppendLine(";");
             builder.Append("            bool __argSeen").Append(i.ToString(CultureInfo.InvariantCulture)).AppendLine(" = false;");
         }
@@ -911,8 +913,10 @@ public sealed class TomlSerializerContextGenerator : IIncrementalGenerator
                 continue;
             }
 
-            var memberTypeName = member.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            var defaultLiteral = member.Type.IsReferenceType ? "default!" : "default";
+            // Use nullable type declaration for nullable reference types to avoid CS8600 warnings on template assignments.
+            var isNullableRefType = member.Type.IsReferenceType && member.Type.NullableAnnotation == NullableAnnotation.Annotated;
+            var memberTypeName = member.Type.ToDisplayString(isNullableRefType ? FullyQualifiedNullableFormat : SymbolDisplayFormat.FullyQualifiedFormat);
+            var defaultLiteral = isNullableRefType ? "null" : (member.Type.IsReferenceType ? "default!" : "default");
             builder.Append("            ").Append(memberTypeName).Append(" __memberValue").Append(i.ToString(CultureInfo.InvariantCulture)).Append(" = ").Append(defaultLiteral).AppendLine(";");
             builder.Append("            bool __memberSeen").Append(i.ToString(CultureInfo.InvariantCulture)).AppendLine(" = false;");
         }

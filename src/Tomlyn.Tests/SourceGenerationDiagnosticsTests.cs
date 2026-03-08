@@ -107,6 +107,30 @@ public sealed class SourceGenerationDiagnosticsTests
         Assert.That(diagnostics.Any(d => d.Id == "TOMLYN005" && d.GetMessage().Contains("TypeInfoPropertyName", StringComparison.Ordinal)), Is.True);
     }
 
+    [Test]
+    public void Generator_DoesNotEmitCS8600_ForNullableReferenceTypeMembers()
+    {
+        // Regression test for: nullable reference type properties should not produce CS8600
+        // when the member is absent from TOML and its value is read from the template instance.
+        var source = """
+            #nullable enable
+            using System.Text.Json.Serialization;
+            using Tomlyn.Serialization;
+
+            public sealed class AppOptions
+            {
+                public string? NullableMock { get; init; }
+                public string NonNullableMock { get; init; } = string.Empty;
+            }
+
+            [TomlSerializable(typeof(AppOptions))]
+            internal partial class AppOptionsContext : TomlSerializerContext { }
+            """;
+
+        var diagnostics = RunGenerator(source);
+        Assert.That(diagnostics.Any(d => d.Id == "CS8600"), Is.False, "CS8600 should not be reported for nullable reference type properties");
+    }
+
     private static ImmutableArray<Diagnostic> RunGenerator(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
